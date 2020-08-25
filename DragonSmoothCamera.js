@@ -191,15 +191,6 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
  * @type text
  * @default 0
  * @desc Set the Offset y of the camera.
- * 
- * @command test
- * @text Test
- * @desc Test.
- *
- * @arg script
- * @text Script
- * @type note
- * @desc EE - Evil Eval.
  */
 
  /*~struct~Vector:
