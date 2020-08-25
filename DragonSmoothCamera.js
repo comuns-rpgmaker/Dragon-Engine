@@ -4,16 +4,22 @@
 // RPG Maker MZ - DragonSmoothCamera.js
 //=============================================================================
 
-var Imported                = Imported || {};
-Imported.DragonSmoothScroll = 1.0;
-var DragonEngine            = DragonEngine || {};
-DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
+var DragonEngine                  = DragonEngine || {};
+DragonEngine.SmoothCamera         = DragonEngine.SmoothCamera || {};
+DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 
 /*:
  * @target MZ
  * @plugindesc It provides some functions to make your game's camera smoother and more functional.
  * @author The Dragon
- * @help DragonSmoothCamera.js
+ * @url https://github.com/comuns-rpgmaker
+ * @help 
+ * Usage:
+ *   Plugin will automatically apply when ON.
+ *
+ * About:
+ *   DragonSmoothCamera.js
+ *   Version 1.01
  *
  * @param slideCoefficient
  * @text Slide Coefficient
@@ -26,7 +32,46 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
  * @desc Default camera offset relative to the current focus.
  * @type struct<Vector>
  * @default {"x": "0", "y": "0"}
+ * 
+ * @param dinamicCameraOffset
+ * @text Dinamic Camera
+ * @desc Camera offset changes dynamically according to the direction of the character in focus.
+ * @type boolean
+ * @default false
+ * 
+ * @param charDirVariableName
+ * @text Char Direction Variable
+ * @desc Name to the Character variable that indicates your current direction. (Advanced)
+ * @parent dinamicCameraOffset
+ * @type text
+ * @default _direction
+ * 
+ * @param cameraOffsetbyDir
+ * @text Camera Offset by Direction
+ * @parent dinamicCameraOffset
+ * @type struct<Directions>
+ * @default {"1":"{\"x\": \"-60\", \"y\": \"60\"}","2":"{\"x\": \"0\", \"y\": \"60\"}","3":"{\"x\": \"60\", \"y\": \"60\"}","4":"{\"x\": \"-60\", \"y\": \"0\"}","6":"{\"x\": \"60\", \"y\": \"0\"}","7":"{\"x\": \"-60\", \"y\": \"-60\"}","8":"{\"x\": \"0\", \"y\": \"-60\"}","9":"{\"x\": \"60\", \"y\": \"-60\"}"}
  *
+ * @command setsmoothCamera
+ * @text Set Smooth Camera State
+ * @desc Change if smooth camera system is enabled.
+ *
+ * @arg value
+ * @text Smooth Camera Enabled?
+ * @type boolean
+ * @default true
+ * @desc Changes the state of the entire system.
+ * 
+ * @command setdinamicCamera
+ * @text Set Dinamic Camera State
+ * @desc Change if dinamic camera is enabled.
+ *
+ * @arg value
+ * @text Dinamic Camera Enabled?
+ * @type boolean
+ * @default false
+ * @desc Camera offset changes dynamically according to the direction of the character in focus.
+ * 
  * @command set 1
  * @text Set Camera Focus to Player
  * @desc Returns the focus of the camera to ther player.
@@ -163,6 +208,56 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
  * @default 1
  */
 
+ /*~struct~Directions:
+ * @param 1
+ * @text ↙
+ * @desc Down-left Direction
+ * @type struct<Vector>
+ * @default {"x": "-60", "y": "60"}
+ * 
+ * @param 2
+ * @text ↓
+ * @desc Down Direction
+ * @type struct<Vector>
+ * @default {"x": "0", "y": "60"}
+ * 
+ * @param 3
+ * @text ↘
+ * @desc Down-Right Direction
+ * @type struct<Vector>
+ * @default {"x": "60", "y": "60"}
+ * 
+ * @param 4
+ * @text ←
+ * @desc Left Direction
+ * @type struct<Vector>
+ * @default {"x": "-60", "y": "0"}
+ * 
+ * @param 6
+ * @text →
+ * @desc Right Direction
+ * @type struct<Vector>
+ * @default {"x": "60", "y": "0"}
+ * 
+ * @param 7
+ * @text ↖
+ * @desc Up-Left Direction
+ * @type struct<Vector>
+ * @default {"x": "-60", "y": "-60"}
+ * 
+ * @param 8
+ * @text ↑
+ * @desc Up Direction
+ * @type struct<Vector>
+ * @default {"x": "0", "y": "-60"}
+ * 
+ * @param 9
+ * @text ↗
+ * @desc Up-Right Direction
+ * @type struct<Vector>
+ * @default {"x": "60", "y": "-60"}
+ */
+
 (() => {
 	
 	//-----------------------------------------------------------------------------
@@ -172,9 +267,14 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
 	
 	const pluginName = "DragonSmoothCamera";
 	
-	DragonEngine.SmoothCamera.params           = PluginManager.parameters(pluginName);
-	DragonEngine.SmoothCamera.cameraOffset     = JSON.parse(DragonEngine.SmoothCamera.params['cameraOffset']);
-	DragonEngine.SmoothCamera.slideCoefficient = parseFloat(DragonEngine.SmoothCamera.params['slideCoefficient']);
+	DragonEngine.SmoothCamera.params              = PluginManager.parameters(pluginName);
+	DragonEngine.SmoothCamera.enabled             = true;
+	DragonEngine.SmoothCamera.cameraOffset        = JSON.parse(DragonEngine.SmoothCamera.params['cameraOffset']);
+	DragonEngine.SmoothCamera.slideCoefficient    = parseFloat(DragonEngine.SmoothCamera.params['slideCoefficient']);
+	DragonEngine.SmoothCamera.cameraOffsetbyDir   = Object.fromEntries(Object.entries(JSON.parse(DragonEngine.SmoothCamera.params['cameraOffsetbyDir'])).map(([k, v]) => [k, 
+                                                    Object.fromEntries(Object.entries(JSON.parse(v)).map(([k, v]) => [k, parseInt(v)]))]));
+	DragonEngine.SmoothCamera.dinamicCameraOffset = JSON.parse(DragonEngine.SmoothCamera.params['dinamicCameraOffset']);
+	DragonEngine.SmoothCamera.charDirVariableName = DragonEngine.SmoothCamera.params['charDirVariableName'];
 
 	PluginManager.registerCommand(pluginName, "set 1", args => {
 		$gamePlayer.setCameraFocus(0);
@@ -227,6 +327,14 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
 		$gamePlayer.setCameraOffset(parseInt(args.x), parseInt(args.y));
 	});
 
+	PluginManager.registerCommand(pluginName, "setdinamicCamera", args => {
+		DragonEngine.SmoothCamera.dinamicCameraOffset = JSON.parse(args.value);
+	});
+
+	PluginManager.registerCommand(pluginName, "setsmoothCamera", args => {
+		DragonEngine.SmoothCamera.enabled = JSON.parse(args.value);
+	});
+	
 	//-----------------------------------------------------------------------------
 	// Game_Map
 	//
@@ -247,72 +355,56 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
 		_Game_Map_setupScroll.call(this);
 	}
 
-	Game_Map.prototype.snapToGrid = function(a, b) {
-		if (a instanceof Vector2) {
-			return a.snapTo(b);
-		} else {
-			return Math.floor(a * b) / b;
-		}
-	}
-
     const _Game_Map_scrollDown = Game_Map.prototype.scrollDown;
 	Game_Map.prototype.scrollDown = function(distance) {
-		const tempDist = distance;
 		const tileH = this.tileHeight();
-		const inverseTileH = 1 / tileH;
-		distance = this.snapToGrid(distance, tileH);
+		const tempDist = distance * tileH;
+		distance = Math.floor(tempDist);
 		this._restDisplayY += tempDist - distance;
-		if (this._restDisplayY >= inverseTileH) {
-			distance += inverseTileH;
-			this._restDisplayY -= inverseTileH;
+		if (this._restDisplayY >= 1) {
+			distance += 1;
+			this._restDisplayY -= 1;
 		}
-		_Game_Map_scrollDown.call(this, distance);
-		this._displayY = this.snapToGrid(this._displayY, tileH);
+		_Game_Map_scrollDown.call(this, distance / tileH);
 	}
 
 	const _Game_Map_scrollLeft = Game_Map.prototype.scrollLeft;
 	Game_Map.prototype.scrollLeft = function(distance) {
-		const tempDist = distance;
 		const tileW = this.tileWidth();
-		const inversetileW = 1 / tileW;
-		distance = this.snapToGrid(distance, tileW);
+		const tempDist = distance * tileW;
+		distance = Math.floor(tempDist);
 		this._restDisplayX -= tempDist - distance;
-		if (this._restDisplayX <= -inversetileW) {
-			distance += inversetileW;
-			this._restDisplayX += inversetileW;
+		if (this._restDisplayX <= -1) {
+			distance += 1;
+			this._restDisplayX += 1;
 		}
-		_Game_Map_scrollLeft.call(this, distance);
-		this._displayX = this.snapToGrid(this._displayX, tileW);
+		_Game_Map_scrollLeft.call(this, distance / tileW);
 	}
 
 	const _Game_Map_scrollRight = Game_Map.prototype.scrollRight;
 	Game_Map.prototype.scrollRight = function(distance) {
-		const tempDist = distance;
 		const tileW = this.tileWidth();
-		const inversetileW = 1 / tileW;
-		distance = this.snapToGrid(distance, tileW);
+		const tempDist = distance * tileW;
+		distance = Math.floor(tempDist);
 		this._restDisplayX += tempDist - distance;
-		if (this._restDisplayX >= inversetileW) {
-			distance += inversetileW;
-			this._restDisplayX -= inversetileW;
+		if (this._restDisplayX >= 1) {
+			distance += 1;
+			this._restDisplayX -= 1;
 		}
-		_Game_Map_scrollRight.call(this, distance);
-		this._displayX = this.snapToGrid(this._displayX, tileW);
+		_Game_Map_scrollRight.call(this, distance / tileW);
 	}
 
     const _Game_Map_scrollUp = Game_Map.prototype.scrollUp;
 	Game_Map.prototype.scrollUp = function(distance) {
-		const tempDist = distance;
 		const tileH = this.tileHeight();
-		const inverseTileH = 1 / tileH;
-		distance = this.snapToGrid(distance, tileH);
+		const tempDist = distance * tileH;
+		distance = Math.floor(tempDist);
 		this._restDisplayY -= tempDist - distance;
-		if (this._restDisplayY <= -inverseTileH) {
-			distance += inverseTileH;
-			this._restDisplayY += inverseTileH;
+		if (this._restDisplayY <= -1) {
+			distance += 1;
+			this._restDisplayY += 1;
 		}
-		_Game_Map_scrollUp.call(this, distance);
-		this._displayY = this.snapToGrid(this._displayY, tileH);
+        _Game_Map_scrollUp.call(this, distance / tileH);
 	}
 
 	//-----------------------------------------------------------------------------
@@ -321,17 +413,19 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
 	// The game object class for the player. It contains event starting
 	// determinants and map scrolling functions.
 
-	const _Game_PlayerinitMembers = Game_Player.prototype.initMembers
+	const _Game_PlayerinitMembers = Game_Player.prototype.initMembers;
 	Game_Player.prototype.initMembers = function() {
 		_Game_PlayerinitMembers.call(this);
 		this._cameraFocus  = this;
-		this._cameraOffset = new Vector2(
-			parseInt(DragonEngine.SmoothCamera.cameraOffset.x),
-			parseInt(DragonEngine.SmoothCamera.cameraOffset.y)
-		);
+		this._cameraOffset = {
+			x: parseInt(DragonEngine.SmoothCamera.cameraOffset.x),
+			y: parseInt(DragonEngine.SmoothCamera.cameraOffset.y)
+		};
 	}
 
+	const _Game_PlayerupdateScroll = Game_Player.prototype.updateScroll;
 	Game_Player.prototype.updateScroll = function(...args) {
+		if (!DragonEngine.SmoothCamera.enabled) return _Game_PlayerupdateScroll.call(this, ...args);
 		const focus = this.cameraFocus();
 		const dX    = (focus.x - Graphics.width  / 2) / DragonEngine.SmoothCamera.slideCoefficient;
 		const dY    = (focus.y - Graphics.height / 2) / DragonEngine.SmoothCamera.slideCoefficient;
@@ -348,23 +442,30 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
 	};
 
 	Game_Player.prototype.cameraFocus = function() {
-		const vec = new Vector2();
-		if (this._cameraFocus instanceof Vector2) {
+		const vec = {x: 0, y: 0};
+		if (this._cameraFocus instanceof Game_CharacterBase) {
+			vec.x = this._cameraFocus.screenX();
+			vec.y = this._cameraFocus.screenY();
+		} else {
 			const tw = $gameMap.tileWidth();
 			const th = $gameMap.tileHeight();
-			vec.set(
-				$gameMap.adjustX(this._cameraFocus.x) * tw + tw / 2,
-				$gameMap.adjustY(this._cameraFocus.y) * th + th
-			);
-		} else if (this._cameraFocus instanceof Game_CharacterBase) {
-			vec.set(this._cameraFocus.screenX(), this._cameraFocus.screenY());
+			vec.x = $gameMap.adjustX(this._cameraFocus.x) * tw + tw / 2;
+			vec.y = $gameMap.adjustY(this._cameraFocus.y) * th + th;
 		}
-		return vec.add(this._cameraOffset);
+		if (this._cameraFocus instanceof Game_CharacterBase && DragonEngine.SmoothCamera.dinamicCameraOffset) {
+			const dirVec = DragonEngine.SmoothCamera.cameraOffsetbyDir[this._cameraFocus[DragonEngine.SmoothCamera.charDirVariableName]];
+			vec.x += dirVec.x;
+			vec.y += dirVec.y;
+		} else {
+			vec.x += this._cameraOffset.x;
+			vec.y += this._cameraOffset.y;
+		}
+		return vec;
 	}
 
 	Game_Player.prototype.setCameraFocus = function(...args) {
 		if (args.length === 2) {
-			this._cameraFocus = new Vector2(...args);
+			this._cameraFocus = {x: args[0], y: args[1]};
 		} else {
 			const value = args[0];
 			if (typeof value === "number") {
@@ -376,6 +477,7 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
 	}
 
 	Game_Player.prototype.setCameraOffset = function(x, y) {
-		this._cameraOffset.set(x, y);
+		this._cameraOffset.x = x;
+		this._cameraOffset.y = y;
 	}
 })();
