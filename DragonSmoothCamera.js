@@ -11,15 +11,15 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
 
 /*:
  * @target MZ
- * @plugindesc SMOOTH!!
+ * @plugindesc It provides some functions to make your game's camera smoother and more functional.
  * @author The Dragon
  * @help DragonSmoothCamera.js
  *
  * @param slideCoefficient
  * @text Slide Coefficient
- * @desc The higher this value, the faster the camera movement.
+ * @desc The lower this value, the faster the camera movement.
  * @type text
- * @default 0.001953125
+ * @default 960
  * 
  * @param cameraOffset
  * @text Camera Offset
@@ -129,8 +129,8 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
  * @arg slideCoefficient
  * @text Slide Coefficient
  * @type text
- * @default 0.001953125
- * @desc The higher this value, the faster the camera movement.
+ * @default 960
+ * @desc The lower this value, the faster the camera movement.
  *
  * @command setCameraOffset
  * @text Set Camera Offset
@@ -169,13 +169,12 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
 	// PluginManager
 	//
 	// The static class that manages the plugins.
-
+	
 	const pluginName = "DragonSmoothCamera";
 	
 	DragonEngine.SmoothCamera.params           = PluginManager.parameters(pluginName);
 	DragonEngine.SmoothCamera.cameraOffset     = JSON.parse(DragonEngine.SmoothCamera.params['cameraOffset']);
 	DragonEngine.SmoothCamera.slideCoefficient = parseFloat(DragonEngine.SmoothCamera.params['slideCoefficient']);
-
 
 	PluginManager.registerCommand(pluginName, "set 1", args => {
 		$gamePlayer.setCameraFocus(0);
@@ -249,15 +248,8 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
 	}
 
 	Game_Map.prototype.snapToGrid = function(a, b) {
-		if (typeof a === Vector2) {
-			if (typeof b === Vector2) {
-				a.x = this.snapToGrid(a.x, b.x);
-				a.y = this.snapToGrid(a.y, b.y);
-			} else {
-				a.x = this.snapToGrid(a.x, b);
-				a.y = this.snapToGrid(a.y, b);
-			}
-			return a;
+		if (a instanceof Vector2) {
+			return a.snapTo(b);
 		} else {
 			return Math.floor(a * b) / b;
 		}
@@ -341,8 +333,8 @@ DragonEngine.SmoothCamera   = DragonEngine.SmoothCamera || {};
 
 	Game_Player.prototype.updateScroll = function(...args) {
 		const focus = this.cameraFocus();
-		const dX    = (focus.x - Graphics.width  / 2) * DragonEngine.SmoothCamera.slideCoefficient;
-		const dY    = (focus.y - Graphics.height / 2) * DragonEngine.SmoothCamera.slideCoefficient;
+		const dX    = (focus.x - Graphics.width  / 2) / DragonEngine.SmoothCamera.slideCoefficient;
+		const dY    = (focus.y - Graphics.height / 2) / DragonEngine.SmoothCamera.slideCoefficient;
 		if (dX > 0) {
 			$gameMap.scrollRight(dX);
 		} else if (dX != 0) {
