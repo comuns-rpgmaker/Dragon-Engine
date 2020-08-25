@@ -1,6 +1,6 @@
 "use strict";
 //=============================================================================
-// RPG Maker MZ - DragonSmoothCamera.js
+// ** RPG Maker MZ - DragonSmoothCamera.js
 //=============================================================================
 
 var DragonEngine                  = DragonEngine || {};
@@ -191,6 +191,15 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
  * @type text
  * @default 0
  * @desc Set the Offset y of the camera.
+ * 
+ * @command test
+ * @text Test
+ * @desc Test.
+ *
+ * @arg script
+ * @text Script
+ * @type note
+ * @desc EE - Evil Eval.
  */
 
  /*~struct~Vector:
@@ -258,12 +267,11 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
  */
 
 (() => {
-	
+	//=============================================================================
+	// ** PluginManager
 	//-----------------------------------------------------------------------------
-	// PluginManager
-	//
 	// The static class that manages the plugins.
-	
+	//=============================================================================	
 	const pluginName = "DragonSmoothCamera";
 	
 	DragonEngine.SmoothCamera.params              = PluginManager.parameters(pluginName);
@@ -274,86 +282,134 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
                                                     Object.fromEntries(Object.entries(JSON.parse(v)).map(([k, v]) => [k, parseInt(v)]))]));
 	DragonEngine.SmoothCamera.dinamicCameraOffset = JSON.parse(DragonEngine.SmoothCamera.params['dinamicCameraOffset']);
 	DragonEngine.SmoothCamera.charDirVariableName = DragonEngine.SmoothCamera.params['charDirVariableName'];
-
+	//------------------------------------------------------------------------
+	// * set 1
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "set 1", args => {
 		$gamePlayer.setCameraFocus(0);
 	});
-
+	//------------------------------------------------------------------------
+	// * set 2
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "set 2", args => {
 		$gamePlayer.setCameraFocus(parseInt(args.x), parseInt(args.y));
 	});
-
+	//------------------------------------------------------------------------
+	// * set 3
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "set 3", args => {
 		const a = $gameVariables.value(parseInt(args.x));
 		const b = $gameVariables.value(parseInt(args.y));
 		$gamePlayer.setCameraFocus(a, b);
 	});
-
+	//------------------------------------------------------------------------
+	// * set 4
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "set 4", args => {
 		const a = $gameVariables.value($gameVariables.value(parseInt(args.x)));
 		const b = $gameVariables.value($gameVariables.value(parseInt(args.y)));
 		$gamePlayer.setCameraFocus(a, b);
 	});
-
+	//------------------------------------------------------------------------
+	// * set 5
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "set 5", args => {
 		$gamePlayer.setCameraFocus($gameMap._interpreter._eventId);
 	});
-
+	//------------------------------------------------------------------------
+	// * set 6
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "set 6", args => {
 		const id = parseInt(args.id);
 		$gamePlayer.setCameraFocus(id === 0 ? $gameMap._interpreter._eventId : id);
 	});
-
+	//------------------------------------------------------------------------
+	// * set 7
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "set 7", args => {
 		const id = $gameVariables.value(parseInt(args.id));
 		$gamePlayer.setCameraFocus(id === 0 ? $gameMap._interpreter._eventId : id);
 	});
-
+	//------------------------------------------------------------------------
+	// * set 8
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "set 8", args => {
 		const id = $gameVariables.value($gameVariables.value(parseInt(args.id)));
 		$gamePlayer.setCameraFocus(id === 0 ? $gameMap._interpreter._eventId : id);
 	});
-
+	//------------------------------------------------------------------------
+	// * set 9
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "set 9", args => {
 		$gamePlayer.setCameraFocus(eval(args.instance));
 	});
-
+	//------------------------------------------------------------------------
+	// * setSlideCoefficient
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "setSlideCoefficient", args => {
 		DragonEngine.SmoothCamera.slideCoefficient = parseFloat(args.slideCoefficient);
 	});
-
+	//------------------------------------------------------------------------
+	// * setCameraOffset
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "setCameraOffset", args => {
 		$gamePlayer.setCameraOffset(parseInt(args.x), parseInt(args.y));
 	});
-
+	//------------------------------------------------------------------------
+	// * setdinamicCamera
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "setdinamicCamera", args => {
 		DragonEngine.SmoothCamera.dinamicCameraOffset = JSON.parse(args.value);
 	});
-
+	//------------------------------------------------------------------------
+	// * setsmoothCamera
+	// - New Event Command
+	//------------------------------------------------------------------------
 	PluginManager.registerCommand(pluginName, "setsmoothCamera", args => {
 		DragonEngine.SmoothCamera.enabled = JSON.parse(args.value);
 	});
-	
+	//=============================================================================
+	// ** Game_Map
 	//-----------------------------------------------------------------------------
-	// Game_Map
-	//
 	// The game object class for a map. It contains scrolling and passage
 	// determination functions.
-
+	//=============================================================================
+	//------------------------------------------------------------------------
+	// * initialize
+	// - Aliased function
+	//------------------------------------------------------------------------
     const _Game_Map_initialize = Game_Map.prototype.initialize;
 	Game_Map.prototype.initialize = function() {
 		this._restDisplayX = 0;
 		this._restDisplayY = 0;
 		_Game_Map_initialize.call(this);
 	}
-
+	//------------------------------------------------------------------------
+	// * setupScroll
+	// - Aliased function
+	//------------------------------------------------------------------------
 	const _Game_Map_setupScroll = Game_Map.prototype.setupScroll;
 	Game_Map.prototype.setupScroll = function() {
 		this._restDisplayX = 0;
 		this._restDisplayY = 0;
 		_Game_Map_setupScroll.call(this);
 	}
-
+	//------------------------------------------------------------------------
+	// * scrollDown
+	// - Aliased function
+	//------------------------------------------------------------------------
     const _Game_Map_scrollDown = Game_Map.prototype.scrollDown;
 	Game_Map.prototype.scrollDown = function(distance) {
 		const tileH = this.tileHeight();
@@ -366,7 +422,10 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 		}
 		_Game_Map_scrollDown.call(this, distance / tileH);
 	}
-
+	//------------------------------------------------------------------------
+	// * scrollLeft
+	// - Aliased function
+	//------------------------------------------------------------------------
 	const _Game_Map_scrollLeft = Game_Map.prototype.scrollLeft;
 	Game_Map.prototype.scrollLeft = function(distance) {
 		const tileW = this.tileWidth();
@@ -379,7 +438,10 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 		}
 		_Game_Map_scrollLeft.call(this, distance / tileW);
 	}
-
+	//------------------------------------------------------------------------
+	// * scrollRight
+	// - Aliased function
+	//------------------------------------------------------------------------
 	const _Game_Map_scrollRight = Game_Map.prototype.scrollRight;
 	Game_Map.prototype.scrollRight = function(distance) {
 		const tileW = this.tileWidth();
@@ -392,7 +454,10 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 		}
 		_Game_Map_scrollRight.call(this, distance / tileW);
 	}
-
+	//------------------------------------------------------------------------
+	// * scrollUp
+	// - Aliased function
+	//------------------------------------------------------------------------
     const _Game_Map_scrollUp = Game_Map.prototype.scrollUp;
 	Game_Map.prototype.scrollUp = function(distance) {
 		const tileH = this.tileHeight();
@@ -405,13 +470,16 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 		}
         _Game_Map_scrollUp.call(this, distance / tileH);
 	}
-
+	//=============================================================================
+	// ** Game_Player
 	//-----------------------------------------------------------------------------
-	// Game_Player
-	//
 	// The game object class for the player. It contains event starting
 	// determinants and map scrolling functions.
-
+	//=============================================================================
+	//------------------------------------------------------------------------
+	// * initMembers
+	// - Aliased function
+	//------------------------------------------------------------------------
 	const _Game_PlayerinitMembers = Game_Player.prototype.initMembers;
 	Game_Player.prototype.initMembers = function() {
 		_Game_PlayerinitMembers.call(this);
@@ -421,7 +489,10 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 			y: parseInt(DragonEngine.SmoothCamera.cameraOffset.y)
 		};
 	}
-
+	//------------------------------------------------------------------------
+	// * updateScroll
+	// - Aliased function
+	//------------------------------------------------------------------------
 	const _Game_PlayerupdateScroll = Game_Player.prototype.updateScroll;
 	Game_Player.prototype.updateScroll = function(...args) {
 		if (!DragonEngine.SmoothCamera.enabled) return _Game_PlayerupdateScroll.call(this, ...args);
@@ -439,7 +510,10 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 			$gameMap.scrollUp(-dY);
 		}
 	};
-
+	//------------------------------------------------------------------------
+	// * cameraFocus
+	// - New function
+	//------------------------------------------------------------------------
 	Game_Player.prototype.cameraFocus = function() {
 		const vec = {x: 0, y: 0};
 		if (this._cameraFocus instanceof Game_CharacterBase) {
@@ -461,7 +535,10 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 		}
 		return vec;
 	}
-
+	//------------------------------------------------------------------------
+	// * setCameraFocus
+	// - New function
+	//------------------------------------------------------------------------
 	Game_Player.prototype.setCameraFocus = function(...args) {
 		if (args.length === 2) {
 			this._cameraFocus = {x: args[0], y: args[1]};
@@ -474,7 +551,10 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 			}
 		}
 	}
-
+	//------------------------------------------------------------------------
+	// * setCameraOffset
+	// - New function
+	//------------------------------------------------------------------------
 	Game_Player.prototype.setCameraOffset = function(x, y) {
 		this._cameraOffset.x = x;
 		this._cameraOffset.y = y;
