@@ -10,15 +10,23 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 /*:
  * @target MZ
  * @plugindesc It provides some functions to make your game's camera smoother and more functional.
- * @author The Dragon
+ * @author Jorge 'Maker' Augusto (Dragon)
  * @url https://github.com/comuns-rpgmaker
  * @help 
- * Usage:
- *   Plugin will automatically apply when ON.
+ * Introduction:
+ *   This plugin generates a delay effect in the movement of the camera until 
+ *   it stabilizes in focus. Creating a smooth effect!
  *
+ * Usage:
+ *   I created a lot of commands to make this plugin as user friendly as I could! 
+ *   See each of them and their description to understand how to use it.
+ * 
  * About:
  *   DragonSmoothCamera.js
  *   Version 1.01
+ * 
+ * License:
+ *   https://github.com/comuns-rpgmaker/Dragon-Engine/blob/master/LICENSE
  *
  * @param slideCoefficient
  * @text Slide Coefficient
@@ -264,7 +272,6 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 	// The static class that manages the plugins.
 	//=============================================================================	
 	const pluginName = "DragonSmoothCamera";
-	
 	DragonEngine.SmoothCamera.params              = PluginManager.parameters(pluginName);
 	DragonEngine.SmoothCamera.enabled             = true;
 	DragonEngine.SmoothCamera.cameraOffset        = JSON.parse(DragonEngine.SmoothCamera.params['cameraOffset']);
