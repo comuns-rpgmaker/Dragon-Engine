@@ -24,6 +24,7 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
  * About:
  *   DragonSmoothCamera.js
  *   Version 1.01
+ *   For support and new plugins join our discord server! https://discord.gg/Kh9XXZ2 (Comuns PLugins)
  * 
  * License:
  *   https://github.com/comuns-rpgmaker/Dragon-Engine/blob/master/LICENSE
