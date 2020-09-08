@@ -24,7 +24,6 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
  * About:
  *   DragonSmoothCamera.js
  *   Version 1.01
- *   For support and new plugins join our discord server! https://discord.gg/Kh9XXZ2 (Comuns PLugins)
  * 
  * License:
  *   https://github.com/comuns-rpgmaker/Dragon-Engine/blob/master/LICENSE
@@ -281,6 +280,7 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
                                                     Object.fromEntries(Object.entries(JSON.parse(v)).map(([k, v]) => [k, parseInt(v)]))]));
 	DragonEngine.SmoothCamera.dinamicCameraOffset = JSON.parse(DragonEngine.SmoothCamera.params['dinamicCameraOffset']);
 	DragonEngine.SmoothCamera.charDirVariableName = DragonEngine.SmoothCamera.params['charDirVariableName'];
+	DragonEngine.SmoothCamera.tempCharacterObject = null;
 	//------------------------------------------------------------------------
 	// * set 1
 	// - New Event Command
@@ -482,7 +482,7 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 	const _Game_PlayerinitMembers = Game_Player.prototype.initMembers;
 	Game_Player.prototype.initMembers = function() {
 		_Game_PlayerinitMembers.call(this);
-		this._cameraFocus  = this;
+		DragonEngine.SmoothCamera.tempCharacterObject  = this;
 		this._cameraOffset = {
 			x: parseInt(DragonEngine.SmoothCamera.cameraOffset.x),
 			y: parseInt(DragonEngine.SmoothCamera.cameraOffset.y)
@@ -515,17 +515,17 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 	//------------------------------------------------------------------------
 	Game_Player.prototype.cameraFocus = function() {
 		const vec = {x: 0, y: 0};
-		if (this._cameraFocus instanceof Game_CharacterBase) {
-			vec.x = this._cameraFocus.screenX();
-			vec.y = this._cameraFocus.screenY();
+		if (DragonEngine.SmoothCamera.tempCharacterObject instanceof Game_CharacterBase) {
+			vec.x = DragonEngine.SmoothCamera.tempCharacterObject.screenX();
+			vec.y = DragonEngine.SmoothCamera.tempCharacterObject.screenY();
 		} else {
 			const tw = $gameMap.tileWidth();
 			const th = $gameMap.tileHeight();
-			vec.x = $gameMap.adjustX(this._cameraFocus.x) * tw + tw / 2;
-			vec.y = $gameMap.adjustY(this._cameraFocus.y) * th + th;
+			vec.x = $gameMap.adjustX(DragonEngine.SmoothCamera.tempCharacterObject.x) * tw + tw / 2;
+			vec.y = $gameMap.adjustY(DragonEngine.SmoothCamera.tempCharacterObject.y) * th + th;
 		}
-		if (this._cameraFocus instanceof Game_CharacterBase && DragonEngine.SmoothCamera.dinamicCameraOffset) {
-			const dirVec = DragonEngine.SmoothCamera.cameraOffsetbyDir[this._cameraFocus[DragonEngine.SmoothCamera.charDirVariableName]];
+		if (DragonEngine.SmoothCamera.tempCharacterObject instanceof Game_CharacterBase && DragonEngine.SmoothCamera.dinamicCameraOffset) {
+			const dirVec = DragonEngine.SmoothCamera.cameraOffsetbyDir[DragonEngine.SmoothCamera.tempCharacterObject[DragonEngine.SmoothCamera.charDirVariableName]];
 			vec.x += dirVec.x;
 			vec.y += dirVec.y;
 		} else {
@@ -540,13 +540,13 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 	//------------------------------------------------------------------------
 	Game_Player.prototype.setCameraFocus = function(...args) {
 		if (args.length === 2) {
-			this._cameraFocus = {x: args[0], y: args[1]};
+			DragonEngine.SmoothCamera.tempCharacterObject = {x: args[0], y: args[1]};
 		} else {
 			const value = args[0];
 			if (typeof value === "number") {
 				this.setCameraFocus(value <= 0 ? this : $gameMap.event(value));
 			} else if (value instanceof Game_CharacterBase) {
-				this._cameraFocus = value;
+				DragonEngine.SmoothCamera.tempCharacterObject = value;
 			}
 		}
 	}
@@ -558,4 +558,15 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
 		this._cameraOffset.x = x;
 		this._cameraOffset.y = y;
 	}
+	//------------------------------------------------------------------------
+	// * extractSaveContents
+	// - Alias function
+	//------------------------------------------------------------------------
+	const JorgeNaoQuisArrumar_extractSaveContents = DataManager.extractSaveContents;
+	DataManager.extractSaveContents = function(contents) {
+		JorgeNaoQuisArrumar_extractSaveContents.call(this, ...arguments);
+		// Aqui você troca depois para ser um vehicle, character sei lá... 
+		// Salva essa coisa :X
+		DragonEngine.SmoothCamera.tempCharacterObject = $gamePlayer; 
+	};
 })();
