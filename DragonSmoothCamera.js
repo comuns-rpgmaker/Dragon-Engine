@@ -5,7 +5,7 @@
 
 var DragonEngine                  = DragonEngine || {};
 DragonEngine.SmoothCamera         = DragonEngine.SmoothCamera || {};
-DragonEngine.SmoothCamera.VERSION = [1, 0, 1];
+DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
 
 /*:
  * @target MZ
