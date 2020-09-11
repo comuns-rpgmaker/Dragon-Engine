@@ -1,11 +1,10 @@
-"use strict";
 //=============================================================================
 // ** RPG Maker MZ - DragonSmoothCamera.js
 //=============================================================================
 
-var DragonEngine                  = DragonEngine || {};
-DragonEngine.SmoothCamera         = DragonEngine.SmoothCamera || {};
-DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
+var SDragon                  = SDragon || {};
+SDragon.SmoothCamera         = SDragon.SmoothCamera || {};
+SDragon.SmoothCamera.VERSION = [1, 1, 0];
 
 /*:
  * @target MZ
@@ -23,7 +22,8 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
  * 
  * About:
  *   DragonSmoothCamera.js
- *   Version 1.01
+ *   Version 1.10
+ *   For support and new plugins join our discord server! https://discord.gg/Kh9XXZ2 (Comuns PLugins)
  * 
  * License:
  *   https://github.com/comuns-rpgmaker/Dragon-Engine/blob/master/LICENSE
@@ -58,32 +58,12 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
  * @parent dinamicCameraOffset
  * @type struct<Directions>
  * @default {"1":"{\"x\": \"-60\", \"y\": \"60\"}","2":"{\"x\": \"0\", \"y\": \"60\"}","3":"{\"x\": \"60\", \"y\": \"60\"}","4":"{\"x\": \"-60\", \"y\": \"0\"}","6":"{\"x\": \"60\", \"y\": \"0\"}","7":"{\"x\": \"-60\", \"y\": \"-60\"}","8":"{\"x\": \"0\", \"y\": \"-60\"}","9":"{\"x\": \"60\", \"y\": \"-60\"}"}
- *
- * @command setsmoothCamera
- * @text Set Smooth Camera State
- * @desc Change if smooth camera system is enabled.
- *
- * @arg value
- * @text Smooth Camera Enabled?
- * @type boolean
- * @default true
- * @desc Changes the state of the entire system.
  * 
- * @command setdinamicCamera
- * @text Set Dinamic Camera State
- * @desc Change if dinamic camera is enabled.
- *
- * @arg value
- * @text Dinamic Camera Enabled?
- * @type boolean
- * @default false
- * @desc Camera offset changes dynamically according to the direction of the character in focus.
- * 
- * @command set 1
+ * @command setCameraFocusToPlayer
  * @text Set Camera Focus to Player
  * @desc Returns the focus of the camera to ther player.
  *
- * @command set 2
+ * @command setCameraFocusToMap
  * @text Set Camera Map Focus
  * @desc Changes the focus of the camera to a position on the map.
  *
@@ -99,7 +79,7 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
  * @default 0
  * @desc Set the focus position y on the map.
  * 
- * @command set 3
+ * @command setCameraFocusToMapByVar
  * @text Set Camera Map Focus (by Variables)
  * @desc Changes the focus of the camera to a position on the map.
  *
@@ -115,7 +95,7 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
  * @default 1
  * @desc Set the focus position y on the map.
  * 
- * @command set 4
+ * @command setCameraFocusToMapByVarVar
  * @text Set Camera Map Focus (by Variables ID's)
  * @desc Changes the focus of the camera to a position on the map.
  *
@@ -131,11 +111,11 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
  * @default 1
  * @desc Set the focus position y on the map.
  * 
- * @command set 5
+ * @command setCameraFocusToCurrentEvent
  * @text Set Camera Focus to this Event
  * @desc Changes the focus of the camera to this event.
  * 
- * @command set 6
+ * @command setCameraFocusToEvent
  * @text Set Camera Focus to an Event
  * @desc Changes the focus of the camera to an valid event in the map.
  *
@@ -145,7 +125,7 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
  * @text Event ID
  * @desc Set the focus position to the especified event.
  *
- * @command set 7
+ * @command setCameraFocusToEventByVar
  * @text Set Camera Focus to an Event (by Variable)
  * @desc Changes the focus of the camera to an valid event in the map.
  *
@@ -155,7 +135,7 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
  * @text Variable Event ID
  * @desc Set the focus position to the especified event.
  * 
- * @command set 8
+ * @command setCameraFocusToEventByVarVar
  * @text Set Camera Focus to an Event (by Variable ID)
  * @desc Changes the focus of the camera to an valid event in the map.
  *
@@ -165,7 +145,7 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
  * @text Variable ID Event ID
  * @desc Set the focus position to the especified event.
  * 
- * @command set 9
+ * @command setCameraFocusToCharInstance
  * @text Set Camera Focus to an Character Object
  * @desc Changes the focus of the camera to an Game_Character instance.
  *
@@ -199,6 +179,26 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
  * @type text
  * @default 0
  * @desc Set the Offset y of the camera.
+ * 
+ * @command setsmoothCamera
+ * @text Set Smooth Camera State
+ * @desc Change if smooth camera system is enabled.
+ *
+ * @arg value
+ * @text Smooth Camera Enabled?
+ * @type boolean
+ * @default true
+ * @desc Changes the state of the entire system.
+ * 
+ * @command setdinamicCamera
+ * @text Set Dinamic Camera State
+ * @desc Change if dinamic camera is enabled.
+ *
+ * @arg value
+ * @text Dinamic Camera Enabled?
+ * @type boolean
+ * @default false
+ * @desc Camera offset changes dynamically according to the direction of the character in focus.m
  */
 
  /*~struct~Vector:
@@ -267,117 +267,161 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
 
 (() => {
 	//=============================================================================
+	// ** Plugin Definitions
+	//=============================================================================	
+	"use strict";
+	const pluginName = "DragonSmoothCamera";
+	//=============================================================================
+	// ** SDragon.easing
+	//-----------------------------------------------------------------------------
+	// --
+	//=============================================================================	
+	SDragon.easing = class {
+
+		in(t, power) {
+			return Math.pow(t, power);
+		}
+
+		out(t, power) {
+			return 1 - Math.abs(Math.pow(t - 1, power));
+		}
+
+		inOut(t, power) {
+			if (t < 0.5) {
+				return this.in(t * 2, power) / 2;
+			} else {
+				return this.out(t * 2 - 1, power) / 2 + 0.5
+			}
+		}
+
+		smoothIn(t, d, b, c, power) {
+			t = (t / d).clamp(0, 1)
+			return b + (c - b) * this.in(t, power);
+		}
+
+		smoothOut(t, d, b, c, power) {
+			t = (t / d).clamp(0, 1)
+			return b + (c - b) * this.out(t, power);
+		}
+
+		smoothInOut(t, d, b, c, power) {
+			t = (t / d).clamp(0, 1)
+			return b + (c - b) * this.inOut(t, power);
+		}
+	}
+	SDragon.easing = SDragon.easing.prototype;
+	//=============================================================================
 	// ** PluginManager
 	//-----------------------------------------------------------------------------
 	// The static class that manages the plugins.
 	//=============================================================================	
-	const pluginName = "DragonSmoothCamera";
-	DragonEngine.SmoothCamera.params              = PluginManager.parameters(pluginName);
-	DragonEngine.SmoothCamera.enabled             = true;
-	DragonEngine.SmoothCamera.cameraOffset        = JSON.parse(DragonEngine.SmoothCamera.params['cameraOffset']);
-	DragonEngine.SmoothCamera.slideCoefficient    = parseFloat(DragonEngine.SmoothCamera.params['slideCoefficient']);
-	DragonEngine.SmoothCamera.cameraOffsetbyDir   = Object.fromEntries(Object.entries(JSON.parse(DragonEngine.SmoothCamera.params['cameraOffsetbyDir'])).map(([k, v]) => [k, 
-                                                    Object.fromEntries(Object.entries(JSON.parse(v)).map(([k, v]) => [k, parseInt(v)]))]));
-	DragonEngine.SmoothCamera.dinamicCameraOffset = JSON.parse(DragonEngine.SmoothCamera.params['dinamicCameraOffset']);
-	DragonEngine.SmoothCamera.charDirVariableName = DragonEngine.SmoothCamera.params['charDirVariableName'];
-	DragonEngine.SmoothCamera.tempCharacterObject = null;
-	//------------------------------------------------------------------------
-	// * set 1
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "set 1", args => {
-		$gamePlayer.setCameraFocus(0);
+	Object.assign(SDragon, {
+		assignPluginCommands(pluginName, obj) {
+			const proto = obj.prototype;
+			for (const commandName of Object.getOwnPropertyNames(proto)) {
+				if (commandName === 'constructor') continue;
+				const func = proto[commandName];
+			    if (typeof func === "function") PluginManager.registerCommand(pluginName, commandName, func);
+			}
+		}
 	});
-	//------------------------------------------------------------------------
-	// * set 2
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "set 2", args => {
-		$gamePlayer.setCameraFocus(parseInt(args.x), parseInt(args.y));
+	SDragon.assignPluginCommands(pluginName, class {
+		//------------------------------------------------------------------------
+		// * setCameraFocusToPlayer
+		//------------------------------------------------------------------------
+		setCameraFocusToPlayer() {
+			$gamePlayer.setCameraFocus(0);
+		}
+		//------------------------------------------------------------------------
+		// * setCameraFocusToMap
+		//------------------------------------------------------------------------
+		setCameraFocusToMap(args) {
+			$gamePlayer.setCameraFocus(parseInt(args.x), parseInt(args.y));
+		}
+		//------------------------------------------------------------------------
+		// * setCameraFocusToMapByVar
+		//------------------------------------------------------------------------
+		setCameraFocusToMapByVar(args) {
+			const a = $gameVariables.value(parseInt(args.x));
+			const b = $gameVariables.value(parseInt(args.y));
+			$gamePlayer.setCameraFocus(a, b);
+		}
+		//------------------------------------------------------------------------
+		// * setCameraFocusToMapByVarVar
+		//------------------------------------------------------------------------
+		setCameraFocusToMapByVarVar(args) {
+			const a = $gameVariables.value($gameVariables.value(parseInt(args.x)));
+			const b = $gameVariables.value($gameVariables.value(parseInt(args.y)));
+			$gamePlayer.setCameraFocus(a, b);
+		}
+		//------------------------------------------------------------------------
+		// * setCameraFocusToCurrentEvent
+		//------------------------------------------------------------------------
+		setCameraFocusToCurrentEvent() {
+			$gamePlayer.setCameraFocus($gameMap._interpreter._eventId);
+		}
+		//------------------------------------------------------------------------
+		// * setCameraFocusToEvent
+		//------------------------------------------------------------------------
+		setCameraFocusToEvent(args) {
+			const id = parseInt(args.id);
+			$gamePlayer.setCameraFocus(id === 0 ? $gameMap._interpreter._eventId : id);
+		}
+		//------------------------------------------------------------------------
+		// * setCameraFocusToEventByVar
+		//------------------------------------------------------------------------
+		setCameraFocusToEventByVar(args) {
+			const id = $gameVariables.value(parseInt(args.id));
+			$gamePlayer.setCameraFocus(id === 0 ? $gameMap._interpreter._eventId : id);
+		}
+		//------------------------------------------------------------------------
+		// * setCameraFocusToEventByVarVar
+		//------------------------------------------------------------------------
+		setCameraFocusToEventByVarVar(args) {
+			const id = $gameVariables.value($gameVariables.value(parseInt(args.id)));
+			$gamePlayer.setCameraFocus(id === 0 ? $gameMap._interpreter._eventId : id);
+		}
+		//------------------------------------------------------------------------
+		// * setCameraFocusToCharInstance
+		//------------------------------------------------------------------------
+		setCameraFocusToCharInstance(args) {
+			$gamePlayer.setCameraFocus(eval(args.instance));
+		}
+		//------------------------------------------------------------------------
+		// * setSlideCoefficient
+		//------------------------------------------------------------------------
+		setSlideCoefficient(args) {
+			SDragon.SmoothCamera.slideCoefficient = parseFloat(args.slideCoefficient);
+		}
+		//------------------------------------------------------------------------
+		// * setCameraOffset
+		//------------------------------------------------------------------------
+		setCameraOffset(args) {
+			$gamePlayer.setCameraOffset(parseInt(args.x), parseInt(args.y));
+		}
+		//------------------------------------------------------------------------
+		// * setdinamicCamera
+		//------------------------------------------------------------------------
+		setdinamicCamera(args) {
+			SDragon.SmoothCamera.dinamicCameraOffset = JSON.parse(args.value);
+		}
+		//------------------------------------------------------------------------
+		// * setsmoothCamera
+		//------------------------------------------------------------------------
+		setsmoothCamera(args) {
+			SDragon.SmoothCamera.enabled = JSON.parse(args.value);
+		}
 	});
-	//------------------------------------------------------------------------
-	// * set 3
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "set 3", args => {
-		const a = $gameVariables.value(parseInt(args.x));
-		const b = $gameVariables.value(parseInt(args.y));
-		$gamePlayer.setCameraFocus(a, b);
-	});
-	//------------------------------------------------------------------------
-	// * set 4
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "set 4", args => {
-		const a = $gameVariables.value($gameVariables.value(parseInt(args.x)));
-		const b = $gameVariables.value($gameVariables.value(parseInt(args.y)));
-		$gamePlayer.setCameraFocus(a, b);
-	});
-	//------------------------------------------------------------------------
-	// * set 5
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "set 5", args => {
-		$gamePlayer.setCameraFocus($gameMap._interpreter._eventId);
-	});
-	//------------------------------------------------------------------------
-	// * set 6
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "set 6", args => {
-		const id = parseInt(args.id);
-		$gamePlayer.setCameraFocus(id === 0 ? $gameMap._interpreter._eventId : id);
-	});
-	//------------------------------------------------------------------------
-	// * set 7
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "set 7", args => {
-		const id = $gameVariables.value(parseInt(args.id));
-		$gamePlayer.setCameraFocus(id === 0 ? $gameMap._interpreter._eventId : id);
-	});
-	//------------------------------------------------------------------------
-	// * set 8
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "set 8", args => {
-		const id = $gameVariables.value($gameVariables.value(parseInt(args.id)));
-		$gamePlayer.setCameraFocus(id === 0 ? $gameMap._interpreter._eventId : id);
-	});
-	//------------------------------------------------------------------------
-	// * set 9
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "set 9", args => {
-		$gamePlayer.setCameraFocus(eval(args.instance));
-	});
-	//------------------------------------------------------------------------
-	// * setSlideCoefficient
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "setSlideCoefficient", args => {
-		DragonEngine.SmoothCamera.slideCoefficient = parseFloat(args.slideCoefficient);
-	});
-	//------------------------------------------------------------------------
-	// * setCameraOffset
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "setCameraOffset", args => {
-		$gamePlayer.setCameraOffset(parseInt(args.x), parseInt(args.y));
-	});
-	//------------------------------------------------------------------------
-	// * setdinamicCamera
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "setdinamicCamera", args => {
-		DragonEngine.SmoothCamera.dinamicCameraOffset = JSON.parse(args.value);
-	});
-	//------------------------------------------------------------------------
-	// * setsmoothCamera
-	// - New Event Command
-	//------------------------------------------------------------------------
-	PluginManager.registerCommand(pluginName, "setsmoothCamera", args => {
-		DragonEngine.SmoothCamera.enabled = JSON.parse(args.value);
+	SDragon.SmoothCamera.params = PluginManager.parameters(pluginName);
+	Object.assign(SDragon.SmoothCamera, {
+		enabled             : true,
+		charDirVariableName : SDragon.SmoothCamera.params['charDirVariableName'],
+		cameraOffset        : JSON.parse(SDragon.SmoothCamera.params['cameraOffset']),
+		dinamicCameraOffset : JSON.parse(SDragon.SmoothCamera.params['dinamicCameraOffset']),
+		slideCoefficient    : parseFloat(SDragon.SmoothCamera.params['slideCoefficient']),
+		cameraOffsetbyDir   : Object.fromEntries(Object.entries(JSON.parse(SDragon.SmoothCamera.params['cameraOffsetbyDir'])).map(([k, v]) => [k, 
+						      Object.fromEntries(Object.entries(JSON.parse(v)).map(([k, v]) => [k, parseInt(v)]))])),
+		tempCharacterObject : null
 	});
 	//=============================================================================
 	// ** Game_Map
@@ -385,188 +429,316 @@ DragonEngine.SmoothCamera.VERSION = [1, 0, 2];
 	// The game object class for a map. It contains scrolling and passage
 	// determination functions.
 	//=============================================================================
-	//------------------------------------------------------------------------
-	// * initialize
-	// - Aliased function
-	//------------------------------------------------------------------------
-    const _Game_Map_initialize = Game_Map.prototype.initialize;
-	Game_Map.prototype.initialize = function() {
-		this._restDisplayX = 0;
-		this._restDisplayY = 0;
-		_Game_Map_initialize.call(this);
-	}
-	//------------------------------------------------------------------------
-	// * setupScroll
-	// - Aliased function
-	//------------------------------------------------------------------------
-	const _Game_Map_setupScroll = Game_Map.prototype.setupScroll;
-	Game_Map.prototype.setupScroll = function() {
-		this._restDisplayX = 0;
-		this._restDisplayY = 0;
-		_Game_Map_setupScroll.call(this);
-	}
-	//------------------------------------------------------------------------
-	// * scrollDown
-	// - Aliased function
-	//------------------------------------------------------------------------
-    const _Game_Map_scrollDown = Game_Map.prototype.scrollDown;
-	Game_Map.prototype.scrollDown = function(distance) {
-		const tileH = this.tileHeight();
-		const tempDist = distance * tileH;
-		distance = Math.floor(tempDist);
-		this._restDisplayY += tempDist - distance;
-		if (this._restDisplayY >= 1) {
-			distance += 1;
-			this._restDisplayY -= 1;
-		}
-		_Game_Map_scrollDown.call(this, distance / tileH);
-	}
-	//------------------------------------------------------------------------
-	// * scrollLeft
-	// - Aliased function
-	//------------------------------------------------------------------------
-	const _Game_Map_scrollLeft = Game_Map.prototype.scrollLeft;
-	Game_Map.prototype.scrollLeft = function(distance) {
-		const tileW = this.tileWidth();
-		const tempDist = distance * tileW;
-		distance = Math.floor(tempDist);
-		this._restDisplayX -= tempDist - distance;
-		if (this._restDisplayX <= -1) {
-			distance += 1;
-			this._restDisplayX += 1;
-		}
-		_Game_Map_scrollLeft.call(this, distance / tileW);
-	}
-	//------------------------------------------------------------------------
-	// * scrollRight
-	// - Aliased function
-	//------------------------------------------------------------------------
-	const _Game_Map_scrollRight = Game_Map.prototype.scrollRight;
-	Game_Map.prototype.scrollRight = function(distance) {
-		const tileW = this.tileWidth();
-		const tempDist = distance * tileW;
-		distance = Math.floor(tempDist);
-		this._restDisplayX += tempDist - distance;
-		if (this._restDisplayX >= 1) {
-			distance += 1;
-			this._restDisplayX -= 1;
-		}
-		_Game_Map_scrollRight.call(this, distance / tileW);
-	}
-	//------------------------------------------------------------------------
-	// * scrollUp
-	// - Aliased function
-	//------------------------------------------------------------------------
-    const _Game_Map_scrollUp = Game_Map.prototype.scrollUp;
-	Game_Map.prototype.scrollUp = function(distance) {
-		const tileH = this.tileHeight();
-		const tempDist = distance * tileH;
-		distance = Math.floor(tempDist);
-		this._restDisplayY -= tempDist - distance;
-		if (this._restDisplayY <= -1) {
-			distance += 1;
-			this._restDisplayY += 1;
-		}
-        _Game_Map_scrollUp.call(this, distance / tileH);
-	}
+
+	const 
+	alias_Game_Map_initialize    = Game_Map.prototype.initialize,
+	alias_Game_Map_setupScroll   = Game_Map.prototype.setupScroll,
+	alias_Game_Map_setDisplayPos = Game_Map.prototype.setDisplayPos;
+
+	Object.assign(Game_Map.prototype, {
+		//------------------------------------------------------------------------
+		// * initialize
+		// - Aliased function
+		//------------------------------------------------------------------------
+		initialize() {
+			this._pixelDisplay = new PIXI.Point();
+			this._restDisplayX = 0;
+			this._restDisplayY = 0;
+			alias_Game_Map_initialize.call(this, ...arguments);
+		},
+		//------------------------------------------------------------------------
+		// * setupScroll
+		// - Aliased function
+		//------------------------------------------------------------------------
+		setupScroll() {
+			this._restDisplayX = 0;
+			this._restDisplayY = 0;
+			alias_Game_Map_setupScroll.call(this, ...arguments);
+		},
+		//------------------------------------------------------------------------
+		// * setDisplayPos
+		// - Aliased function
+		//------------------------------------------------------------------------
+		setDisplayPos() {
+			alias_Game_Map_setDisplayPos.call(this, ...arguments);
+			this._pixelDisplay.set(
+				Math.floor(this._displayX * this.tileWidth()),
+				Math.floor(this._displayY * this.tileHeight()),
+			);
+		},
+		//------------------------------------------------------------------------
+		// * scrollDown
+		// - Overwrite function
+		//------------------------------------------------------------------------
+		scrollDown(distance) {
+			const th 		  = this.tileHeight(),
+				  pixelHeight = this.height() * th,
+				  tempDist    = distance * th;
+			let   pixelDist   = Math.floor(tempDist);
+			this._restDisplayY += (tempDist - pixelDist);
+			if (this._restDisplayY >= 1) {
+				pixelDist += 1; this._restDisplayY -= 1;
+			}
+			if (this.isLoopVertical()) {
+				this._pixelDisplay.y = (this._pixelDisplay.y + pixelDist) % pixelHeight;
+				this._displayY = (this._pixelDisplay.y / th);
+				if (this._parallaxLoopY) this._parallaxY += (pixelDist / th);
+			} else if (pixelHeight >= Graphics.height) {
+				const lastDisplayY = this._pixelDisplay.y;
+				this._pixelDisplay.y = Math.min(lastDisplayY + pixelDist, pixelHeight - Graphics.height);
+				this._displayY = (this._pixelDisplay.y / th);
+				this._parallaxY += (this._pixelDisplay.y - lastDisplayY) / th;
+			}
+		},
+		//------------------------------------------------------------------------
+		// * scrollLeft
+		// - Overwrite function
+		//------------------------------------------------------------------------
+		scrollLeft(distance) {
+			const tw 		 = this.tileWidth(),
+				  pixelWidth = this.width() * tw,
+				  tempDist   = distance * tw;
+			let   pixelDist  = Math.floor(tempDist);
+			this._restDisplayX -= (tempDist - pixelDist);
+			if (this._restDisplayX <= -1) {
+				pixelDist += 1; this._restDisplayX += 1;
+			}
+			if (this.isLoopHorizontal()) {
+				this._pixelDisplay.x = (this._pixelDisplay.x + pixelWidth - pixelDist) % pixelWidth;
+				this._displayX = (this._pixelDisplay.x / tw);
+				if (this._parallaxLoopX) this._parallaxX -= (pixelDist / tw);
+			} else if (pixelWidth >= Graphics.width) {
+				const lastDisplayX = this._pixelDisplay.x;
+				this._pixelDisplay.x = Math.max(lastDisplayX - pixelDist, 0);
+				this._displayX = (this._pixelDisplay.x / tw);
+				this._parallaxX += (this._pixelDisplay.x - lastDisplayX) / tw;
+			}
+		},
+		//------------------------------------------------------------------------
+		// * scrollRight
+		// - Overwrite function
+		//------------------------------------------------------------------------
+		scrollRight(distance) {
+			const tw 		 = this.tileWidth(),
+				  pixelWidth = this.width() * tw,
+				  tempDist   = distance * tw;
+			let   pixelDist  = Math.floor(tempDist);
+			this._restDisplayX += (tempDist - pixelDist);
+			if (this._restDisplayX >= 1) {
+				pixelDist += 1; this._restDisplayX -= 1;
+			}
+			if (this.isLoopHorizontal()) {
+				this._pixelDisplay.x = (this._pixelDisplay.x + pixelDist) % pixelWidth;
+				this._displayX = (this._pixelDisplay.x / tw);
+				if (this._parallaxLoopX) this._parallaxX += (pixelDist / tw);
+			} else if (pixelWidth >= Graphics.width) {
+				const lastDisplayX = this._pixelDisplay.x;
+				this._pixelDisplay.x = Math.min(lastDisplayX + pixelDist, pixelWidth - Graphics.width);
+				this._displayX = (this._pixelDisplay.x / tw);
+				this._parallaxX += (this._pixelDisplay.x - lastDisplayX) / tw;
+			}
+		},
+		//------------------------------------------------------------------------
+		// * scrollUp
+		// - Overwrite function
+		//------------------------------------------------------------------------
+		scrollUp(distance) {
+			const th 		  = this.tileHeight(),
+				  pixelHeight = this.height() * th,
+				  tempDist    = distance * th;
+			let   pixelDist   = Math.floor(tempDist);
+			this._restDisplayY -= (tempDist - pixelDist);
+			if (this._restDisplayY <= -1) {
+				pixelDist += 1; this._restDisplayY += 1;
+			}
+			if (this.isLoopVertical()) {
+				this._pixelDisplay.y = (this._pixelDisplay.y + pixelHeight - pixelDist) % pixelHeight;
+				this._displayY = (this._pixelDisplay.y / th);
+				if (this._parallaxLoopY) this._parallaxY -= (pixelDist / th);
+			} else if (pixelHeight >= Graphics.height) {
+				const lastDisplayY = this._pixelDisplay.y;
+				this._pixelDisplay.y = Math.max(lastDisplayY - pixelDist, 0);
+				this._displayY = (this._pixelDisplay.y / th);
+				this._parallaxY += (this._pixelDisplay.y - lastDisplayY) / th;
+			}
+		},
+		//------------------------------------------------------------------------
+		// * adjustPixelX
+		// - New function
+		//------------------------------------------------------------------------
+		adjustPixelX(x) {
+			const displayX   = this._pixelDisplay.x,
+			      pixelWidth = this.width() * this.tileWidth();
+			if (this.isLoopHorizontal() && x < displayX - (pixelWidth - Graphics.width) / 2) 
+			      return x - displayX + pixelWidth;
+			else  return x - displayX;
+		},
+		//------------------------------------------------------------------------
+		// * adjustPixelY
+		// - New function
+		//------------------------------------------------------------------------
+		adjustPixelY(y) {
+			const displayY    = this._pixelDisplay.y,
+			      pixelHeight = this.height() * this.tileHeight();
+			if (this.isLoopVertical() && y < displayY - (pixelHeight - Graphics.height) / 2)
+				 return y - displayY + pixelHeight;
+			else return y - displayY;
+		},
+		//------------------------------------------------------------------------
+		// * pixelDisplay
+		// - New function
+		//------------------------------------------------------------------------
+		pixelDisplay() {
+			return this._pixelDisplay;
+		},
+	});
+	//=============================================================================
+	// ** Game_CharacterBase
+	//-----------------------------------------------------------------------------
+	// The superclass of Game_Character. It handles basic information, such as
+    // coordinates and images, shared by all characters.
+	//=============================================================================
+
+	Object.assign(Game_CharacterBase.prototype, {
+		//------------------------------------------------------------------------
+		// * screenX
+		// - Overwrite function
+		//------------------------------------------------------------------------
+		screenX() {
+			const tw = $gameMap.tileWidth();
+			return Math.floor($gameMap.adjustPixelX(this._realX * tw) + tw / 2);
+		},
+		//------------------------------------------------------------------------
+		// * screenY
+		// - Overwrite function
+		//------------------------------------------------------------------------
+		screenY() {
+			const th = $gameMap.tileHeight();
+			return Math.floor($gameMap.adjustPixelY(this._realY * th) + th - this.shiftY() - this.jumpHeight());
+		},
+	});
 	//=============================================================================
 	// ** Game_Player
 	//-----------------------------------------------------------------------------
 	// The game object class for the player. It contains event starting
 	// determinants and map scrolling functions.
 	//=============================================================================
-	//------------------------------------------------------------------------
-	// * initMembers
-	// - Aliased function
-	//------------------------------------------------------------------------
-	const _Game_PlayerinitMembers = Game_Player.prototype.initMembers;
-	Game_Player.prototype.initMembers = function() {
-		_Game_PlayerinitMembers.call(this);
-		DragonEngine.SmoothCamera.tempCharacterObject  = this;
-		this._cameraOffset = {
-			x: parseInt(DragonEngine.SmoothCamera.cameraOffset.x),
-			y: parseInt(DragonEngine.SmoothCamera.cameraOffset.y)
-		};
-	}
-	//------------------------------------------------------------------------
-	// * updateScroll
-	// - Aliased function
-	//------------------------------------------------------------------------
-	const _Game_PlayerupdateScroll = Game_Player.prototype.updateScroll;
-	Game_Player.prototype.updateScroll = function(...args) {
-		if (!DragonEngine.SmoothCamera.enabled) return _Game_PlayerupdateScroll.call(this, ...args);
-		const focus = this.cameraFocus();
-		const dX    = (focus.x - Graphics.width  / 2) / DragonEngine.SmoothCamera.slideCoefficient;
-		const dY    = (focus.y - Graphics.height / 2) / DragonEngine.SmoothCamera.slideCoefficient;
-		if (dX > 0) {
-			$gameMap.scrollRight(dX);
-		} else if (dX != 0) {
-			$gameMap.scrollLeft(-dX);
-		}
-		if (dY > 0) {
-			$gameMap.scrollDown(dY);
-		}  else if (dY != 0) {
-			$gameMap.scrollUp(-dY);
-		}
-	};
-	//------------------------------------------------------------------------
-	// * cameraFocus
-	// - New function
-	//------------------------------------------------------------------------
-	Game_Player.prototype.cameraFocus = function() {
-		const vec = {x: 0, y: 0};
-		if (DragonEngine.SmoothCamera.tempCharacterObject instanceof Game_CharacterBase) {
-			vec.x = DragonEngine.SmoothCamera.tempCharacterObject.screenX();
-			vec.y = DragonEngine.SmoothCamera.tempCharacterObject.screenY();
-		} else {
-			const tw = $gameMap.tileWidth();
-			const th = $gameMap.tileHeight();
-			vec.x = $gameMap.adjustX(DragonEngine.SmoothCamera.tempCharacterObject.x) * tw + tw / 2;
-			vec.y = $gameMap.adjustY(DragonEngine.SmoothCamera.tempCharacterObject.y) * th + th;
-		}
-		if (DragonEngine.SmoothCamera.tempCharacterObject instanceof Game_CharacterBase && DragonEngine.SmoothCamera.dinamicCameraOffset) {
-			const dirVec = DragonEngine.SmoothCamera.cameraOffsetbyDir[DragonEngine.SmoothCamera.tempCharacterObject[DragonEngine.SmoothCamera.charDirVariableName]];
-			vec.x += dirVec.x;
-			vec.y += dirVec.y;
-		} else {
-			vec.x += this._cameraOffset.x;
-			vec.y += this._cameraOffset.y;
-		}
-		return vec;
-	}
-	//------------------------------------------------------------------------
-	// * setCameraFocus
-	// - New function
-	//------------------------------------------------------------------------
-	Game_Player.prototype.setCameraFocus = function(...args) {
-		if (args.length === 2) {
-			DragonEngine.SmoothCamera.tempCharacterObject = {x: args[0], y: args[1]};
-		} else {
-			const value = args[0];
-			if (typeof value === "number") {
-				this.setCameraFocus(value <= 0 ? this : $gameMap.event(value));
-			} else if (value instanceof Game_CharacterBase) {
-				DragonEngine.SmoothCamera.tempCharacterObject = value;
+
+	const 
+	alias_Game_Player_initMembers  = Game_Player.prototype.initMembers,
+	alias_Game_Player_updateScroll = Game_Player.prototype.updateScroll;
+
+	Object.assign(Game_Player.prototype, {
+		//------------------------------------------------------------------------
+		// * initMembers
+		// - Aliased function
+		//------------------------------------------------------------------------
+		initMembers() {
+			alias_Game_Player_initMembers.call(this, ...arguments)
+			SDragon.SmoothCamera.tempCharacterObject  = this;
+			this._cameraOffset = {
+				x: parseInt(SDragon.SmoothCamera.cameraOffset.x),
+				y: parseInt(SDragon.SmoothCamera.cameraOffset.y)
+			};
+		},
+		//------------------------------------------------------------------------
+		// * updateScroll
+		// - Aliased function
+		//------------------------------------------------------------------------
+		updateScroll() {
+			if (!SDragon.SmoothCamera.enabled) return alias_Game_Player_updateScroll.call(this, ...arguments);
+			const 
+			focus = this.cameraFocus(),
+		        dX    = (focus.x - Graphics.width  / 2) / SDragon.SmoothCamera.slideCoefficient,
+		        dY    = (focus.y - Graphics.height / 2) / SDragon.SmoothCamera.slideCoefficient;
+			if      (dX >  0) $gameMap.scrollRight(dX);
+			else if (dX != 0) $gameMap.scrollLeft(-dX);
+			if      (dY >  0) $gameMap.scrollDown(dY);
+			else if (dY != 0) $gameMap.scrollUp(-dY);
+		},
+		//------------------------------------------------------------------------
+		// * cameraFocus
+		// - New function
+		//------------------------------------------------------------------------
+		cameraFocus() {
+			const vec = {x: 0, y: 0};
+			if (SDragon.SmoothCamera.tempCharacterObject instanceof Game_CharacterBase) {
+				vec.x = SDragon.SmoothCamera.tempCharacterObject.screenX();
+				vec.y = SDragon.SmoothCamera.tempCharacterObject.screenY();
+			} else {
+				const tw = $gameMap.tileWidth();
+				const th = $gameMap.tileHeight();
+				vec.x = $gameMap.adjustX(SDragon.SmoothCamera.tempCharacterObject.x) * tw + tw / 2;
+				vec.y = $gameMap.adjustY(SDragon.SmoothCamera.tempCharacterObject.y) * th + th;
 			}
-		}
-	}
-	//------------------------------------------------------------------------
-	// * setCameraOffset
-	// - New function
-	//------------------------------------------------------------------------
-	Game_Player.prototype.setCameraOffset = function(x, y) {
-		this._cameraOffset.x = x;
-		this._cameraOffset.y = y;
-	}
-	//------------------------------------------------------------------------
-	// * extractSaveContents
-	// - Alias function
-	//------------------------------------------------------------------------
-	const JorgeNaoQuisArrumar_extractSaveContents = DataManager.extractSaveContents;
-	DataManager.extractSaveContents = function(contents) {
-		JorgeNaoQuisArrumar_extractSaveContents.call(this, ...arguments);
-		// Aqui você troca depois para ser um vehicle, character sei lá... 
-		// Salva essa coisa :X
-		DragonEngine.SmoothCamera.tempCharacterObject = $gamePlayer; 
-	};
+			if (SDragon.SmoothCamera.tempCharacterObject instanceof Game_CharacterBase && SDragon.SmoothCamera.dinamicCameraOffset) {
+				const dirVec = SDragon.SmoothCamera.cameraOffsetbyDir[SDragon.SmoothCamera.tempCharacterObject[SDragon.SmoothCamera.charDirVariableName]];
+				vec.x += dirVec.x;
+				vec.y += dirVec.y;
+			} else {
+				vec.x += this._cameraOffset.x;
+				vec.y += this._cameraOffset.y;
+			}
+			return vec;
+		},
+		//------------------------------------------------------------------------
+		// * setCameraFocus
+		// - New function
+		//------------------------------------------------------------------------
+		setCameraFocus(...args) {
+			if (args.length === 2) {
+				SDragon.SmoothCamera.tempCharacterObject = {x: args[0], y: args[1]};
+			} else {
+				const value = args[0];
+				if (typeof value === "number") {
+					this.setCameraFocus(value <= 0 ? this : $gameMap.event(value));
+				} else if (value instanceof Game_CharacterBase) {
+					SDragon.SmoothCamera.tempCharacterObject = value;
+				}
+			}
+		},
+		//------------------------------------------------------------------------
+		// * setCameraOffset
+		// - New function
+		//------------------------------------------------------------------------
+		setCameraOffset(x, y) {
+			this._cameraOffset.x = x;
+			this._cameraOffset.y = y;
+		},
+	});
+	//=============================================================================
+	// ** Spriteset_Map
+	//-----------------------------------------------------------------------------
+	// The set of sprites on the map screen.
+	//=============================================================================
+
+	Object.assign(Spriteset_Map.prototype, {
+		//------------------------------------------------------------------------
+		// * updateTilemap
+		// - Overwrite function
+		//------------------------------------------------------------------------
+		updateTilemap() {
+			const mapDisplay = $gameMap.pixelDisplay();
+			this._tilemap.origin.set(mapDisplay.x, mapDisplay.y);
+		},
+	});
+	//=============================================================================
+	// ** DataManager
+	//-----------------------------------------------------------------------------
+	// The static class that manages the database and game objects.
+	//=============================================================================
+	
+	const 
+	JorgeNaoQuisArrumar_extractSaveContents = DataManager.extractSaveContents;
+
+    Object.assign(DataManager, {
+		//------------------------------------------------------------------------
+		// * extractSaveContents
+		// - Alias function
+		//------------------------------------------------------------------------
+		extractSaveContents() {
+			JorgeNaoQuisArrumar_extractSaveContents.call(this, ...arguments);
+			SDragon.SmoothCamera.tempCharacterObject = $gamePlayer; 
+		},
+	});
 })();
